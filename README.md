@@ -1,0 +1,1 @@
+# NI-projekat-Seam-carving
