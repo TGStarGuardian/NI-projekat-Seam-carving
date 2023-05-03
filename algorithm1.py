@@ -89,8 +89,92 @@ def remove_vertical_seams(img, counter):
 		new_image = remove_horizontal_seam(new_image)
 	return cv.rotate(new_image, cv.ROTATE_90_CLOCKWISE)
 
+def add_horizontal_seams(img, k):
+	if k == 0:
+		return img
+	
+	shape = img.shape
+	rows = shape[0]
+	cols = shape[1]
+	
+	## each column represents a seam
+	
+	seams = np.zeros((cols, k)).astype(int)
+	
+	new_image = img
+	
+	for t in range(k):
+	
+		M = matrix_m(new_image)
+	
+		seam = np.zeros(cols).astype(int)
 
-img = cv.imread('nature1.jpg')
+		m = 0
+		for i in range(1, rows):
+			if M[i, cols - 1] < M[m, cols - 1]:
+				m = i
+		
+		seam[cols - 1] = m
+	##	print(vertical_seam[rows - 1])
+		## bactrack to the previous row
+		for j in reversed(range(0, cols - 1)):
+			## find the min among the three options
+			_min = seam[j]
+			if _min == rows - 1:
+				seam[j] = _min if (M[_min, j] < M[_min - 1, j]) else _min - 1
+			elif _min == 0:
+				seam[j] = _min if (M[_min, j] < M[_min + 1, j]) else _min + 1
+			else:
+				x = min(M[_min, j], min(M[_min - 1, j], M[_min + 1, j]))
+				if x == M[_min, j]:
+					seam[j] = _min
+				elif x == M[_min - 1, j]:
+					seam[j] = _min - 1
+				else:
+					seam[j] = _min + 1
+		
+		for i in range(cols):
+			seams[i, t] = seam[i]
+	
+	## duplicate seams
+	## seams[i, j] describes i-th pixel of j-th seam
+	## so seams[i] is a list of pixels [i, j] that should be duplicated
+	
+	new_image = np.zeros((rows + k, cols, 3), np.uint8)
+	
+	## for each row of seams
+	for x in range(cols):
+		## sort the row
+		seams[x] = np.sort(seams[x], kind = 'quicksort')
+		
+		## for each column of img
+		for j in range(cols):
+			for i in range(seams[x, 0]):
+				new_image[i, j] = img[i, j]
+			d = 0
+			## for each column of seams
+			for y in range(k):
+				## duplicate
+				new_image[seams[x, y] + d, j] = img[seams[x, y], j]
+				##new_image[seams[x, y] + d + 1, j] = img[seams[x, y], j]
+				d += 1
+				if y != k - 1:
+					for i in range(seams[x, y], seams[x, y + 1]):
+						new_image[i + d, j] = img[i, j]
+				else:
+					for i in range(seams[x, y], rows):
+						new_image[i + d, j] = img[i, j]
+					
+					
+					
+	return new_image
+
+def add_vertical_seams(img, k):
+	new_image = cv.rotate(img, cv.ROTATE_90_COUNTERCLOCKWISE)
+	new_image = add_horizontal_seams(new_image, k)
+	return cv.rotate(new_image, cv.ROTATE_90_CLOCKWISE)
+
+img = cv.imread('castle.png')
 assert img is not None, "file could not be read, check with os.path.exists()"
 
 shape = img.shape
@@ -108,10 +192,11 @@ print(cols)
 h = int(input("Enter target height: "))
 w = int(input("Enter target width: "))
 
-img = remove_vertical_seams(img, cols - w)
-img = remove_horizontal_seams(img, rows - h)
+img = remove_vertical_seams(img, cols - w) if cols - w > 0 else add_vertical_seams(img, w - cols)
+img = remove_horizontal_seams(img, rows - h) if rows - h > 0 else add_horizontal_seams(img, h - rows)
 
-cv.imwrite('nature1_seam.jpg', img)
+
+cv.imwrite('castle_seam.png', img)
 
 ##cv.imshow('photo', img)
 cv.waitKey(0)
