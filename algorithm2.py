@@ -124,6 +124,16 @@ def seam_carving_vertical(img, K, w):
 		cols = tmp.shape[1]
 	
 	return new_img
+	
+def colour_seam(img, K):
+	rows = img.shape[0]
+	cols = img.shape[1]
+	seam = batch_seam(img, K)
+	
+	for i in range(rows):
+		for j in range(K):
+			img[i, j + seam[i]] = [0, 255, 0]
+	cv.imwrite('batch_colouring.png', img)
 
 if __name__ == '__main__':
 	
@@ -143,9 +153,11 @@ if __name__ == '__main__':
 	w = int(input("Enter target width: "))
 	K = int(input("Enter desired K: "))
 
-	new_img = seam_carving_vertical(img, K, w)
+#	new_img = seam_carving_vertical(img, K, w)
 
-	cv.imwrite("batch_seam_" + image, new_img)
+#	cv.imwrite("batch_seam_" + image, new_img)
+	
+	colour_seam(img, K)
 
 	##cv.imshow('photo', img)
 	cv.waitKey(0)
