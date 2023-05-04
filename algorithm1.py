@@ -1,36 +1,34 @@
 import cv2 as cv
 import numpy as np
 
-def e(grad_X, grad_Y, i, j):
-	return abs(grad_X[i, j, 0]) + abs(grad_Y[i, j, 0])
-	+ abs(grad_X[i, j, 1]) + abs(grad_Y[i, j, 1])
-	+ abs(grad_X[i, j, 2]) + abs(grad_Y[i, j, 2])
-
 def matrix_m(img):
 	shape = img.shape
 	rows = shape[0]
 	cols = shape[1]
-	gradient_X = cv.Sobel(img, cv.CV_64F, 1, 0, ksize=3)
-	gradient_Y = cv.Sobel(img, cv.CV_64F, 0, 1, ksize=3)
-
-	energy = np.zeros((rows, cols))
-
-	for i in range(rows):
-		for j in range(cols):
-			energy[i, j] = e(gradient_X, gradient_Y, i, j) 
+	##gradient_X = cv.Sobel(img, cv.CV_64F, 1, 0, ksize=3)
+	##gradient_Y = cv.Sobel(img, cv.CV_64F, 0, 1, ksize=3)
+	gradX = np.gradient(img, axis = 0)
+	gradY = np.gradient(img, axis = 1)
+##	print(np.linalg.norm(gradX[0, 0]))
+	
+	energy = [[np.linalg.norm(gradX[i, j]) + np.linalg.norm(gradX[i, j]) for j in range (cols)] for i in range(rows)]
 
 	M = np.zeros((rows, cols))
 
 
-	for j in range(0, cols):
-		M[0, j] = energy[0, j]
-
-	for i in range(1, rows):
-		M[i, 0] = energy[i, 0] + min(M[i-1, 0], M[i-1, 1])
-		for j in range(1, cols - 1):
-			M[i][j] = energy[i, j] + min(min(M[i-1, j-1], M[i-1, j]), M[i-1, j+1])
-		M[i, cols - 1] = energy[i, j] + min(M[i-1, j-1], M[i-1, j])	
-	
+	for j in range(cols):
+		M[0, j] = energy[0][j]
+		
+## min(M[i-1, j-1], M[i, j-1], M[i+1, j-1])
+	for j in range(1, cols):
+		for i in range(rows):
+			if i == 0:
+				M[i, j] = energy[i][j] + min(M[0, j-1], M[1, j-1])
+			elif i == rows - 1:
+				M[i, j] = energy[i][j] + min(M[i, j-1], M[i-1, j-1])
+			else:
+				M[i, j] = energy[i][j] + min(min(M[i, j-1], M[i-1, j-1]), M[i+1, j-1])
+		
 	return M
 	
 def remove_horizontal_seam(img):
@@ -52,11 +50,11 @@ def remove_horizontal_seam(img):
 	## bactrack to the previous row
 	for j in reversed(range(0, cols - 1)):
 		## find the min among the three options
-		_min = seam[j]
+		_min = seam[j + 1]
 		if _min == rows - 1:
-			seam[j] = _min if (M[_min, j] < M[_min - 1, j]) else _min - 1
+			seam[j] = (_min if (M[_min, j] < M[_min - 1, j]) else _min - 1)
 		elif _min == 0:
-			seam[j] = _min if (M[_min, j] < M[_min + 1, j]) else _min + 1
+			seam[j] = (_min if (M[_min, j] < M[_min + 1, j]) else _min + 1)
 		else:
 			x = min(M[_min, j], min(M[_min - 1, j], M[_min + 1, j]))
 			if x == M[_min, j]:
@@ -65,7 +63,11 @@ def remove_horizontal_seam(img):
 				seam[j] = _min - 1
 			else:
 				seam[j] = _min + 1
-			
+	
+	new = img
+	for i in range(cols):
+		new[seam[i], i] = [0, 0, 255]
+	cv.imwrite('new.jpg', new)		
 ##	for i in range(0, rows):
 ##		img[i, vertical_seam[i]] = [0, 0, 0]
 	new_image = np.zeros((rows - 1, cols, 3), np.uint8)
@@ -119,7 +121,7 @@ def add_horizontal_seams(img, k):
 		## bactrack to the previous row
 		for j in reversed(range(0, cols - 1)):
 			## find the min among the three options
-			_min = seam[j]
+			_min = seam[j + 1]
 			if _min == new_image.shape[0] - 1:
 				seam[j] = _min if (M[_min, j] < M[_min - 1, j]) else _min - 1
 			elif _min == 0:
