@@ -11,7 +11,7 @@ def matrix_m(img):
 	gradY = np.gradient(img, axis = 1)
 ##	print(np.linalg.norm(gradX[0, 0]))
 	
-	energy = [[np.linalg.norm(gradX[i, j]) + np.linalg.norm(gradX[i, j]) for j in range (cols)] for i in range(rows)]
+	energy = [[np.linalg.norm(gradX[i, j]) + np.linalg.norm(gradY[i, j]) for j in range (cols)] for i in range(rows)]
 
 	M = np.zeros((rows, cols))
 
@@ -64,10 +64,10 @@ def remove_horizontal_seam(img):
 			else:
 				seam[j] = _min + 1
 	
-	new = img
-	for i in range(cols):
-		new[seam[i], i] = [0, 0, 255]
-	cv.imwrite('new.jpg', new)		
+#	new = img
+#	for i in range(cols):
+#		new[seam[i], i] = [0, 0, 255]
+#	cv.imwrite('new.jpg', new)		
 ##	for i in range(0, rows):
 ##		img[i, vertical_seam[i]] = [0, 0, 0]
 	new_image = np.zeros((rows - 1, cols, 3), np.uint8)
