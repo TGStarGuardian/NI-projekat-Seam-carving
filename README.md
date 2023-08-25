@@ -23,6 +23,7 @@
 + Sadržaj projekta:
   + jupyter sveske - prezentacija rada algoritma na određenoj slici
   + fajlovi 1.py, 2.py, 3.py, 4.py, 5.py kojima su generisane slike u folderu **rezultati**, u njima je samo sabran ceo algoritam iz sveske
+  + fajl poredjenja.odp je prezentacija u kojoj su poređeni algoritmi
 
 + Pokretanje jupyter-notebook datoteka:
 Datoteke se pokreću na standardan način run all cells komandom unutar Jupyter-Notebook okruženja
